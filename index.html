@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE CITY OF STRANGERS | Hassan Jatoi</title>
+
+    <!-- Google Fonts: 20 Varieties -->
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,700&family=Playfair+Display:ital,wght@0,400;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Cinzel:wght@400;700&family=Dancing+Script:wght@400;700&family=Montserrat:wght@100;300;700&family=Old+Standard+TT:ital,wght@0,400;1,400&family=EB+Garamond:ital,wght@0,400;1,500&family=Libre+Baskerville:ital,wght@0,400;1,400&family=Italianno&family=Great+Vibes&family=Montserrat+Alternates:wght@100&family=Prata&family=Spectral:ital,wght@0,200;1,200&family=Unna:ital,wght@0,400;1,400&family=Zilla+Slab:ital,wght@0,300;1,300&family=Crimson+Pro:ital,wght@0,200;1,200&family=Lora:ital,wght@0,400;1,400&family=Quicksand:wght@300&family=Tenor+Sans&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #050505;
+            --surface: rgba(15, 15, 15, 0.8);
+            --accent: #d4af37;
+            --text: #ffffff;
+            --text-dim: #888888;
+            --border: rgba(212, 175, 55, 0.2);
+            --font-main: 'Bodoni Moda', serif;
+            --glass: blur(15px);
+        }
+
+        .theme-light {
+            --bg: #f5f5f0;
+            --surface: rgba(255, 255, 255, 0.85);
+            --accent: #7d6748;
+            --text: #1a1a1a;
+            --text-dim: #666666;
+            --border: rgba(125, 103, 72, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.5s ease;
+            overflow-x: hidden;
+        }
+
+        /* Particles Background */
+        #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.3; }
+
+        /* Custom Cursor */
+        #cursor {
+            position: fixed; width: 40px; height: 40px; border: 1px solid var(--accent);
+            border-radius: 50%; pointer-events: none; z-index: 10000;
+            transition: transform 0.1s ease, width 0.3s, height 0.3s;
+            display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%);
+        }
+        #cursor::after { content: ''; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
+
+        /* Top Bar */
+        .top-nav {
+            position: fixed; top: 0; left: 0; width: 100%; height: 80px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 5%; z-index: 5000; background: linear-gradient(to bottom, var(--bg), transparent);
+        }
+
+        .brand { font-family: 'Cinzel', serif; font-size: 20px; letter-spacing: 4px; color: var(--accent); }
+
+        /* Control Panel */
+        .side-controls {
+            position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 15px; z-index: 5000;
+        }
+
+        .ctrl-btn {
+            width: 50px; height: 50px; border-radius: 50%; background: var(--surface);
+            backdrop-filter: var(--glass); border: 1px solid var(--border);
+            color: var(--accent); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .ctrl-btn:hover { background: var(--accent); color: white; transform: scale(1.1); }
+
+        /* Font Selector Drawer */
+        #font-drawer {
+            position: fixed; left: -320px; top: 0; width: 300px; height: 100vh;
+            background: var(--surface); backdrop-filter: var(--glass);
+            border-right: 1px solid var(--border); z-index: 6000;
+            padding: 30px; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            overflow-y: auto;
+        }
+        #font-drawer.open { left: 0; }
+        .font-option {
+            padding: 15px; margin-bottom: 10px; border: 1px solid transparent;
+            cursor: pointer; transition: 0.2s; border-radius: 8px; font-size: 18px;
+        }
+        .font-option:hover { border-color: var(--accent); background: rgba(212, 175, 55, 0.1); }
+
+        /* Main Content */
+        .scroller {
+            height: 100vh; overflow-y: scroll; snap-type: y mandatory;
+        }
+
+        .page {
+            height: 100vh; width: 100%; display: flex; snap-align: start;
+            position: relative; border-bottom: 1px solid var(--border);
+        }
+
+        .visual-panel { width: 50%; height: 100%; position: relative; overflow: hidden; }
+        .visual-panel img { width: 100%; height: 100%; object-fit: cover; transition: 2s ease; filter: grayscale(0.8) brightness(0.6); }
+        .page:hover .visual-panel img { transform: scale(1.1); filter: grayscale(0.2) brightness(0.8); }
+
+        .text-panel { 
+            width: 50%; height: 100%; display: flex; flex-direction: column; 
+            justify-content: center; padding: 10% 8%; position: relative;
+        }
+
+        /* Poem Style */
+        .canto-tag { font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 8px; color: var(--accent); margin-bottom: 20px; }
+        .poem-title { font-size: clamp(40px, 5vw, 70px); margin-bottom: 40px; line-height: 1.1; font-weight: 300; }
+        .poem-content { font-size: clamp(18px, 2vw, 24px); line-height: 1.8; white-space: pre-line; color: var(--text); }
+
+        /* Share Menu */
+        .share-overlay {
+            position: absolute; bottom: 30px; right: 30px; display: flex; gap: 10px; opacity: 0; transition: 0.3s;
+        }
+        .page:hover .share-overlay { opacity: 1; }
+
+        @media (max-width: 900px) {
+            .page { flex-direction: column; height: auto; snap-align: none; }
+            .visual-panel, .text-panel { width: 100%; height: auto; }
+            .visual-panel { height: 40vh; }
+            .text-panel { padding: 60px 30px; }
+            .scroller { height: auto; snap-type: none; }
+        }
+
+        .no-print { display: flex; }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body class="theme-dark">
+
+    <canvas id="bg-canvas"></canvas>
+    <div id="cursor"></div>
+
+    <nav class="top-nav no-print">
+        <div class="brand">HASSAN JATOI</div>
+        <div style="font-size: 10px; letter-spacing: 5px; opacity: 0.5;">THE CITY OF STRANGERS</div>
+    </nav>
+
+    <aside id="font-drawer" class="no-print">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+            <h3 style="color: var(--accent);">FONTS LIBRARY</h3>
+            <i data-lucide="x" onclick="toggleFonts()" style="cursor:pointer;"></i>
+        </div>
+        <div id="font-list">
+            <!-- 20 Fonts will be injected here -->
+        </div>
+    </aside>
+
+    <div class="side-controls no-print">
+        <div class="ctrl-btn" onclick="toggleFonts()" title="Change Style"><i data-lucide="type"></i></div>
+        <div class="ctrl-btn" onclick="toggleTheme()" title="Switch Light/Dark"><i data-lucide="sun"></i></div>
+        <div class="ctrl-btn" onclick="downloadFullBook()" title="Print Full Book"><i data-lucide="printer"></i></div>
+        <div class="ctrl-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})"><i data-lucide="arrow-up-circle"></i></div>
+    </div>
+
+    <main class="scroller" id="capture-area">
+        
+        <!-- COVER PAGE -->
+        <section class="page">
+            <div class="visual-panel">
+                <img src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=1200&auto=format&fit=crop" class="daily-img">
+            </div>
+            <div class="text-panel" style="text-align: center; align-items: center;">
+                <p class="canto-tag">POETRY COLLECTION</p>
+                <h1 class="poem-title" style="font-weight: 900; letter-spacing: -2px;">THE CITY<br>OF STRANGERS</h1>
+                <p style="margin-top: 20px; font-size: 14px; letter-spacing: 10px; color: var(--accent);">EST. 2025</p>
+            </div>
+        </section>
+
+        <!-- POEM 1 -->
+        <section class="page poem-section" id="poem-1">
+            <div class="visual-panel">
+                <img src="https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?q=80&w=1200&auto=format&fit=crop" class="daily-img">
+            </div>
+            <div class="text-panel">
+                <span class="canto-tag">CANTO I</span>
+                <h2 class="poem-title dynamic-font">Silent Tears</h2>
+                <div class="poem-content dynamic-font">The night falls heavy, stars refuse to shine,
+                    My eyes are rivers, flowing tears of mine.
+                    Each breath is hollow, each sigh a pain,
+                    Memories linger, like an endless chain.
+
+                    Shadows move softly across my room,
+                    Whispering your absence, igniting gloom.
+                    I reach for comfort, but find the air bare.</div>
+                
+                <div class="share-overlay no-print">
+                    <button class="btn" onclick="sharePoem('poem-1')" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:5px 15px; border-radius:20px; cursor:pointer; font-size:10px;">SHARE AS IMAGE</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- POEM 2 -->
+        <section class="page poem-section" id="poem-2">
+            <div class="visual-panel">
+                <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1200&auto=format&fit=crop" class="daily-img">
+            </div>
+            <div class="text-panel">
+                <span class="canto-tag">CANTO VI</span>
+                <h2 class="poem-title dynamic-font">The City of Strangers</h2>
+                <div class="poem-content dynamic-font">Streets hum with voices I do not know,
+                    Faces pass, yet none look like home.
+                    The neon lights flicker, shadows dance,
+                    And I walk alone, lost in a trance.
+
+                    Windows glow with stories I can’t touch,
+                    Laughter spills, but it doesn’t reach me much.</div>
+                
+                <div class="share-overlay no-print">
+                    <button class="btn" onclick="sharePoem('poem-2')" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:5px 15px; border-radius:20px; cursor:pointer; font-size:10px;">SHARE AS IMAGE</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // 20 Professional Fonts Configuration
+        const fonts = [
+            'Bodoni Moda', 'Playfair Display', 'Cormorant Garamond', 'Cinzel', 
+            'Dancing Script', 'Montserrat', 'Old Standard TT', 'EB Garamond', 
+            'Libre Baskerville', 'Italianno', 'Great Vibes', 'Montserrat Alternates', 
+            'Prata', 'Spectral', 'Unna', 'Zilla Slab', 'Crimson Pro', 'Lora', 
+            'Quicksand', 'Tenor Sans'
+        ];
+
+        // Inject Fonts into Drawer
+        const fontList = document.getElementById('font-list');
+        fonts.forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'font-option';
+            div.style.fontFamily = `'${f}', serif`;
+            div.innerText = f;
+            div.onclick = () => setPoemFont(f);
+            fontList.appendChild(div);
+        });
+
+        function setPoemFont(fontName) {
+            document.querySelectorAll('.dynamic-font').forEach(el => {
+                el.style.fontFamily = `'${fontName}', serif`;
+            });
+            document.documentElement.style.setProperty('--font-main', fontName);
+        }
+
+        function toggleFonts() {
+            document.getElementById('font-drawer').classList.toggle('open');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('theme-light');
+            const isLight = document.body.classList.contains('theme-light');
+            document.querySelector('[data-lucide="sun"]').outerHTML = isLight ? '<i data-lucide="moon"></i>' : '<i data-lucide="sun"></i>';
+            lucide.createIcons();
+        }
+
+        // Custom Cursor Movement
+        document.addEventListener('mousemove', (e) => {
+            const cursor = document.getElementById('cursor');
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Share Individual Poem as Image
+        function sharePoem(id) {
+            const element = document.getElementById(id);
+            html2canvas(element, { useCORS: true, backgroundColor: '#050505' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `HassanJatoi_Poem_${id}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // Download Entire Book as PDF
+        function downloadFullBook() {
+            const element = document.getElementById('capture-area');
+            const opt = {
+                margin: 0,
+                filename: 'TheCityOfStrangers_HassanJatoi.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // Particles Animation
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function initBG() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for(let i=0; i<100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    speed: Math.random() * 0.5
+                });
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            ctx.fillStyle = '#d4af37';
+            particles.forEach(p => {
+                p.y -= p.speed;
+                if(p.y < 0) p.y = canvas.height;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', initBG);
+        initBG(); animate();
+
+        // Daily Image Refresh
+        window.onload = () => {
+            const seed = new Date().getDate();
+            document.querySelectorAll('.daily-img').forEach((img, i) => {
+                const keywords = ['noir', 'sad', 'city', 'roses', 'mist'];
+                const keyword = keywords[i % keywords.length];
+                img.src = `https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1200&auto=format&fit=crop&sig=${seed+i}`;
+            });
+        };
+    </script>
+</body>
+</html>
